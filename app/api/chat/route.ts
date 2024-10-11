@@ -1,64 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { convertToCoreMessages, streamText } from "ai";
 import { z } from "zod";
-import axios from 'axios';
-
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000/api';
-
-async function fetchFromAPI(endpoint: string, params: object = {}) {
-	try {
-		const response = await axios.get(`${API_BASE_URL}${endpoint}`, { params });
-		return response.data;
-	} catch (error) {
-		console.error(`Error fetching from API: ${error}`);
-		throw error;
-	}
-}
-
-async function listHeroes() {
-	return fetchFromAPI('/heroes/');
-}
-
-async function getHero(heroId: string) {
-	return fetchFromAPI(`/heroes/${heroId}/`);
-}
-
-async function listCards() {
-	return fetchFromAPI('/cards/');
-}
-
-async function getCard(cardId: string) {
-	return fetchFromAPI(`/cards/${cardId}/`);
-}
-
-async function listPlayers() {
-	return fetchFromAPI('/players/');
-}
-
-async function getPlayer(playerId: string) {
-	return fetchFromAPI(`/players/${playerId}/`);
-}
-
-async function getHeroPerformance(heroId: string) {
-	return fetchFromAPI(`/hero-performance/${heroId}/`);
-}
-
-async function getHeroMarketData(heroId: string) {
-	return fetchFromAPI(`/hero-market-data/${heroId}/`);
-}
-
-async function getHeroTournamentScores(heroId: string) {
-	return fetchFromAPI(`/hero-tournament-scores/${heroId}/`);
-}
-
-async function predictStarSwings() {
-	return fetchFromAPI('/predict-star-swings/');
-}
-
-async function searchHeroesByHandle(handle: string) {
-	return fetchFromAPI('/search-heroes-by-handle/', { handle });
-}
-
+import { listHeroes, getHero, listCards, getCard, getCardsByOwner, getHeroPerformance, getHeroMarketData, getHeroTournamentScores, predictStarSwings, searchHeroesByHandle } from "@/lib/api";
 export async function POST(request: Request) {
 	const { messages } = await request.json();
 	const stream = await streamText({
@@ -107,20 +50,13 @@ export async function POST(request: Request) {
 					return await getCard(cardId);
 				},
 			},
-			listPlayers: {
-				description: "List all players",
-				parameters: z.object({}),
-				execute: async function () {
-					return await listPlayers();
-				},
-			},
-			getPlayer: {
-				description: "Get detailed information about a specific player",
+			getCardsByOwner: {
+				description: "Get all cards owned by a specific Ethereum address",
 				parameters: z.object({
-					playerId: z.string(),
+					ownerAddress: z.string(),
 				}),
-				execute: async function ({ playerId }) {
-					return await getPlayer(playerId);
+				execute: async function ({ ownerAddress }) {
+					return await getCardsByOwner(ownerAddress);
 				},
 			},
 			getHeroPerformance: {
@@ -166,6 +102,9 @@ export async function POST(request: Request) {
 					return await searchHeroesByHandle(handle);
 				},
 			},
+		},
+		onStepFinish({ text, toolCalls, toolResults, finishReason, usage }) {
+			console.log('onStepFinish', text, toolCalls, toolResults, finishReason, usage)
 		},
 	});
 	return stream.toDataStreamResponse();
