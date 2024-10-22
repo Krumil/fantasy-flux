@@ -62,17 +62,22 @@ async function getHeroesBestReturn() {
 	return fetchFromAPI('/hero-best-return/');
 }
 
+async function findRelevantContent(query: string) {
+	return fetchFromAPI('/find-relevant-content/', { query });
+}
+
 export {
-	listHeroes,
-	getHero,
-	listCards,
+	findRelevantContent,
+	getAllHeroes,
 	getCard,
 	getCardsByOwner,
-	getHeroPerformance,
+	getHero,
 	getHeroMarketData,
+	getHeroPerformance,
 	getHeroTournamentScores,
+	getHeroesBestReturn,
+	listCards,
+	listHeroes,
 	predictStarSwings,
 	searchHeroesByHandle,
-	getAllHeroes,
-	getHeroesBestReturn
 };

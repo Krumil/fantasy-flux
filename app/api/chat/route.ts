@@ -1,19 +1,31 @@
 import { openai } from "@ai-sdk/openai";
 import { convertToCoreMessages, streamText } from "ai";
 import { z } from "zod";
-import { listHeroes, getHero, listCards, getCard, getCardsByOwner, getHeroPerformance, getHeroMarketData, getHeroTournamentScores, predictStarSwings, searchHeroesByHandle } from "@/lib/api";
+import {
+	findRelevantContent,
+	getCard,
+	getCardsByOwner,
+	getHero,
+	getHeroMarketData,
+	getHeroPerformance,
+	getHeroTournamentScores,
+	listCards,
+	listHeroes,
+	predictStarSwings,
+	searchHeroesByHandle,
+} from "@/lib/api";
 export async function POST(request: Request) {
 	const { messages } = await request.json();
 	const stream = await streamText({
 		model: openai("gpt-4o"),
 		system: `
-      - You are a friendly and knowledgeable assistant for a fantasy game based on Twitter influencers
-      - Your responses are concise, informative, and tailored to the user's query
-      - You can provide detailed information about heroes, cards, and players in the game
-      - When discussing trends or performance, you proactively offer to use visualization tools for better insights
-      - You can explain game mechanics and strategies to help players improve their performance
-      - If asked about predictions or future outcomes, you base your responses on available data and trends
-      - You maintain a positive and encouraging tone, especially when discussing player performance or game strategies
+      - You are a knowledgeable assistant for a Twitter-influencer fantasy game
+      - Use getRelevantContent tool to answer generic questions
+      - Use other tools to answer specific questions
+      - Incorporate retrieved information into concise, informative responses
+      - If no relevant info found, use other tools or your understanding
+      - Provide game details, explain mechanics, and offer strategy insights
+      - Base predictions on available data and trends
     `,
 		messages: convertToCoreMessages(messages),
 		maxToolRoundtrips: 3,
@@ -100,6 +112,15 @@ export async function POST(request: Request) {
 				}),
 				execute: async function ({ handle }) {
 					return await searchHeroesByHandle(handle);
+				},
+			},
+			getRelevantContent: {
+				description: "Retrieve relevant information from the knowledge base to answer the user's question.",
+				parameters: z.object({
+					query: z.string().describe("The user's question or query."),
+				}),
+				execute: async function ({ query }) {
+					return await findRelevantContent(query);
 				},
 			},
 		},
